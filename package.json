@@ -8,8 +8,7 @@
   "scripts": {
     "dev:platform": "npm run dev --workspace=packages/platform",
     "build:platform": "npm run build --workspace=packages/platform",
-    "dev:workers": "npm run dev --workspace=packages/workers",
-    "dev:functions": "npm run dev --workspace=packages/functions"
+    "dev:workers": "npm run dev --workspace=packages/workers"
   },
   "description": "AI-powered web scraping platform - monorepo"
 }
