@@ -1,0 +1,148 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: matovufarid
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: sls-scrap
+# "service" is the name of this project. This will also be added to your AWS resource names.
+service: sls-scrap
+
+package:
+  individually: true
+#   patterns:
+#     - '!node_modules/**'
+build:
+  esbuild:
+    # Enable or Disable bundling the function code and dependencies into a single file. (Default: true)
+    # bundle: true
+    minify: true
+
+    # format: cjs
+    # outfile: out.cjs
+    # packages: external
+    # external:
+    #   - http
+    #   - https
+    #   - url
+
+# build:
+#   minify: true
+#   packages: external
+
+provider:
+  name: aws
+  runtime: nodejs22.x
+  region: ${env:MY_AWS_REGION}
+
+  environment:
+    UPSTASH_REDIS_REST_URL: ${env:UPSTASH_REDIS_REST_URL}
+    UPSTASH_REDIS_REST_TOKEN: ${env:UPSTASH_REDIS_REST_TOKEN}
+    EXPLORE_BEGIN_TOPIC_ARN: ${env:EXPLORE_BEGIN_TOPIC_ARN}
+    QUEUE_URL: ${env:QUEUE_URL}
+    PLATFORM_URL: ${ env:PLATFORM_URL }
+  # layers:
+  #   - ${env:CHROMIUM_LAYER_ARN}
+  iam:
+    role:
+      statements: # permissions for all of your functions can be set here
+        - Effect: Allow
+          Action:
+            - sqs:SendMessage
+          Resource: "arn:aws:sqs:af-south-1:*:*"
+        - Effect: Allow
+          Action:
+            - sns:Publish
+          Resource: "arn:aws:sns:af-south-1:*:*"
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+            - s3:PutObject
+          Resource: "arn:aws:s3:::scrappy-scrapped"
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+            - s3:PutObject
+          Resource: "arn:aws:s3:::scrappy-scrapped/*"
+
+functions:
+  api:
+    memorySize: 1024
+    url:
+      cors: true
+    # events:
+    #   - http:
+    #       path: api/scrap
+    #       method: post
+    handler: src/functions/api/index.handler
+    package:
+      individually: true
+      exclude:
+        - "./**"
+      include:
+        - ./src/functions/api/index.handler.ts
+        - ./src/functions/api/node_modules/**
+        - ./src/functions/api/package.json
+
+  explore:
+    layers:
+      - ${env:CHROMIUM_LAYER_ARN}
+
+    timeout: 900
+    memorySize: 1024
+
+    events:
+      - sqs:
+          arn: ${env:QUEUE_ARN}
+          batchSize: 1
+    handler: src/functions/explore/index.handler
+    package:
+      individually: true
+      exclude:
+        - "./**"
+      include:
+        - ./src/functions/explore/index.handler.ts
+        - ./src/functions/explore/node_modules/**
+        - ./src/functions/explore/package.json
+    environment:
+      UPSTASH_REDIS_REST_URL: ${env:UPSTASH_REDIS_REST_URL}
+      UPSTASH_REDIS_REST_TOKEN: ${env:UPSTASH_REDIS_REST_TOKEN}
+      QUEUE_URL: ${env:QUEUE_URL}
+      SCRAPE_TOPIC_ARN: ${env:SCRAPE_TOPIC_ARN}
+      EXPLORE_DONE_TOPIC_ARN: ${env:EXPLORE_DONE_TOPIC_ARN}
+      WEBHOOK_TOPIC_ARN: ${env:WEBHOOK_TOPIC_ARN}
+  ai:
+    timeout: 900
+
+    events:
+      - sqs:
+          arn: ${env:AI_QUEUE_ARN}
+          batchSize: 1
+    handler: src/functions/ai/index.handler
+    package:
+      individually: true
+      exclude:
+        - "./**"
+      include:
+        - ./src/functions/ai/index.handler.ts
+        - ./src/functions/ai/node_modules/**
+        - ./src/functions/ai/package.json
+    environment:
+      UPSTASH_REDIS_REST_URL: ${env:UPSTASH_REDIS_REST_URL}
+      UPSTASH_REDIS_REST_TOKEN: ${env:UPSTASH_REDIS_REST_TOKEN}
+      QUEUE_URL: ${env:QUEUE_URL}
+      SCRAPE_TOPIC_ARN: ${env:SCRAPE_TOPIC_ARN}
+      EXPLORE_DONE_TOPIC_ARN: ${env:EXPLORE_DONE_TOPIC_ARN}
+      WEBHOOK_TOPIC_ARN: ${env:WEBHOOK_TOPIC_ARN}
+      OPENAI_API_KEY: ${env:OPENAI_API_KEY}
+  webhooks:
+    events:
+      - sqs:
+          arn: ${env:WEBHOOK_QUEUE_ARN}
+          batchSize: 1
+    handler: src/functions/webhooks/index.handler
+    package:
+      individually: true
+      exclude:
+        - "./**"
+      include:
+        - ./src/functions/webhooks/index.handler.ts
+        - ./src/functions/webhooks/node_modules/**
+        - ./src/functions/webhooks/package.json

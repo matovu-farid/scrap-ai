@@ -1,0 +1,10 @@
+node_modules/
+.env
+.env.local
+.env.*.local
+dist/
+.next/
+.serverless/
+.DS_Store
+*.tsbuildinfo
+bun.lockb

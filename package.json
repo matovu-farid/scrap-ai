@@ -1,0 +1,15 @@
+{
+  "name": "scrap-ai",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:platform": "npm run dev --workspace=packages/platform",
+    "build:platform": "npm run build --workspace=packages/platform",
+    "dev:workers": "npm run dev --workspace=packages/workers",
+    "dev:functions": "npm run dev --workspace=packages/functions"
+  },
+  "description": "AI-powered web scraping platform - monorepo"
+}
